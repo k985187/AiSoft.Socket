@@ -283,10 +283,6 @@ namespace AiSoft.Socket.Client
         {
             if (!_client.Connected)
             {
-                //_client.Connect();
-                //var sm = new BaseSocketProtocal {BodyLength = 0, Type = (byte)SocketProtocalType.Heart};
-                //_client.SendAsync(sm.ToBytes());
-                //OnOpened?.Invoke(null);
                 _client.ConnectAsync(e =>
                 {
                     if (e != SocketError.Success)

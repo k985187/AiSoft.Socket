@@ -4,11 +4,12 @@ using SAEA.Sockets.Interface;
 
 namespace AiSoft.Socket.Models
 {
-    internal class MessageContext : BaseContext<BaseUnpacker>
+    // BaseContext<BaseUnpacker> IContext
+    internal class MessageContext : IContext
     {
-        public override IUserToken UserToken { get; set; }
+        public IUserToken UserToken { get; set; }
 
-        public override IUnpacker Unpacker { get; set; }
+        public IUnpacker Unpacker { get; set; }
 
         /// <summary>
         /// 上下文

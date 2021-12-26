@@ -176,14 +176,14 @@ namespace AiSoft.Socket.Server
             }
 #endif
             OnAccepted?.Invoke(obj);
-            if (obj is MessageUserToken userToken1)
+            if (obj is MessageUserToken o)
             {
                 var aesKey = EncryptProvider.CreateAesKey();
                 var msgModel = new MessageModel().Set(0, 0, aesKey);
-                var data = _clientList.Encrypt(userToken1.ID, msgModel.JsonPBSerialize());
+                var data = _clientList.Encrypt(o.ID, msgModel.JsonPBSerialize());
                 var sp = BaseSocketProtocal.Parse(data, SocketProtocalType.Pong).ToBytes();
-                Send(userToken1, sp);
-                _clientList.Set(userToken1.ID, aesKey);
+                Send(o, sp);
+                _clientList.Set(o.ID, aesKey);
             }
         }
 
