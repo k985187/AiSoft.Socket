@@ -352,6 +352,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/Nuget
+/Pack
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
