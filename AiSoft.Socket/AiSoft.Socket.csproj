@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Company>AiSoft</Company>
-    <Version>1.0.0.1</Version>
+    <Version>1.0.0.2</Version>
     <Copyright>Copyright © AiSoft 2021</Copyright>
     <Product>AiStock</Product>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="AiSoft.Nat" Version="1.0.0.1" />
-    <PackageReference Include="AiSoft.Tools" Version="1.0.3.2" />
+    <PackageReference Include="AiSoft.Tools" Version="1.0.3.4" />
     <PackageReference Include="SAEA.Sockets" Version="6.2.6.7" />
   </ItemGroup>
 
