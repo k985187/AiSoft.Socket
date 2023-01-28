@@ -10,6 +10,7 @@ using AiSoft.Socket.Server.Base;
 using AiSoft.Socket.Server.Collection;
 using AiSoft.Tools.Helpers;
 using AiSoft.Tools.Security;
+using SAEA.Common.Caching;
 using SAEA.Sockets;
 using SAEA.Sockets.Base;
 using SAEA.Sockets.Handler;
@@ -38,6 +39,11 @@ namespace AiSoft.Socket.Server
         private long _packSendCount;
 
         private IServerSocket _server;
+
+        /// <summary>
+        /// 是否加密
+        /// </summary>
+        private bool _isEncrypt;
 
         /// <summary>
         /// 新建连接事件
@@ -71,10 +77,12 @@ namespace AiSoft.Socket.Server
         /// <param name="count"></param>
         /// <param name="timeOut"></param>
         /// <param name="socketType"></param>
-        public SocketServerBase(int port = 12346, int bufferSize = 4 * 1024, int count = 10000, int timeOut = 30000, SAEASocketType socketType = SAEASocketType.Tcp)
+        /// <param name="isEncrypt"></param>
+        public SocketServerBase(int port = 12346, int bufferSize = 4 * 1024, int count = 10000, int timeOut = 30000, SAEASocketType socketType = SAEASocketType.Tcp, bool isEncrypt = true)
         {
             _receiveModules = new List<ReceiveModule>();
             _clientList = new ClientList();
+            _isEncrypt = isEncrypt;
 
             if (socketType == SAEASocketType.Udp)
             {
@@ -132,7 +140,7 @@ namespace AiSoft.Socket.Server
         {
             if (IsNat)
             {
-                NatBuilder.Create(_server.SocketOption.Port, _server.SocketOption.Port, $"AiSoft.Sock.TcpServer.Nat.{_server.SocketOption.Port}");
+                NatBuilder.Create(_server.SocketOption.Port, _server.SocketOption.Port, $"AiSoft.Sock.Nat.{_server.SocketOption.Port}");
             }
         }
 
@@ -143,7 +151,7 @@ namespace AiSoft.Socket.Server
         {
             if (IsNat)
             {
-                NatBuilder.Delete(_server.SocketOption.Port, _server.SocketOption.Port, $"AiSoft.Sock.TcpServer.Nat.{_server.SocketOption.Port}");
+                NatBuilder.Delete(_server.SocketOption.Port, _server.SocketOption.Port, $"AiSoft.Sock.Nat.{_server.SocketOption.Port}");
             }
         }
 
@@ -176,11 +184,11 @@ namespace AiSoft.Socket.Server
             }
 #endif
             OnAccepted?.Invoke(obj);
-            if (obj is MessageUserToken o)
+            if (obj is MessageUserToken o && _isEncrypt)
             {
                 var aesKey = EncryptProvider.CreateAesKey();
                 var msgModel = new MessageModel().Set(0, 0, aesKey);
-                var data = _clientList.Encrypt(o.ID, msgModel.JsonPBSerialize());
+                var data = _clientList.Encrypt(o.ID, msgModel.JsonPBSerialize(), _isEncrypt);
                 var sp = BaseSocketProtocal.Parse(data, SocketProtocalType.Pong).ToBytes();
                 Send(o, sp);
                 _clientList.Set(o.ID, aesKey);
@@ -279,7 +287,7 @@ namespace AiSoft.Socket.Server
                 try
                 {
                     Interlocked.Increment(ref _packReceiveCount);
-                    var msgModel = _clientList.Decrypt(userToken.ID, s.Content).JsonPBDeserialize<MessageModel>();
+                    var msgModel = _clientList.Decrypt(userToken.ID, s.Content, _isEncrypt).JsonPBDeserialize<MessageModel>();
                     OnReceive(userToken, msgModel);
                 }
                 catch (Exception e)
@@ -418,7 +426,7 @@ namespace AiSoft.Socket.Server
         /// <returns></returns>
         private byte[] GetPbData(IUserToken userToken, MessageModel msgModel)
         {
-            var data = _clientList.Encrypt(userToken.ID, msgModel.JsonPBSerialize());
+            var data = _clientList.Encrypt(userToken.ID, msgModel.JsonPBSerialize(), _isEncrypt);
             var sp = BaseSocketProtocal.Parse(data, SocketProtocalType.ChatMessage).ToBytes();
             return sp;
         }

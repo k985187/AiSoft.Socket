@@ -75,7 +75,7 @@ namespace AiSoft.Socket.Server.Collection
             }
         }
 
-        public byte[] Encrypt(string id, byte[] data)
+        public byte[] Encrypt(string id, byte[] data, bool isEncrypt)
         {
             lock (_syncLocker)
             {
@@ -83,13 +83,13 @@ namespace AiSoft.Socket.Server.Collection
                 if (ci != null)
                 {
                     _cache.Active(id, TimeSpan.FromDays(1));
-                    return data.EncryptTo(ci.EncryptKey.Key, ci.EncryptKey.IV);
+                    return isEncrypt ? data.EncryptTo(ci.EncryptKey.Key, ci.EncryptKey.IV) : data;
                 }
-                return data.EncryptTo();
+                return isEncrypt ? data.EncryptTo() : data;
             }
         }
 
-        public byte[] Decrypt(string id, byte[] data)
+        public byte[] Decrypt(string id, byte[] data, bool isEncrypt)
         {
             lock (_syncLocker)
             {
@@ -97,9 +97,9 @@ namespace AiSoft.Socket.Server.Collection
                 if (ci != null)
                 {
                     _cache.Active(id, TimeSpan.FromDays(1));
-                    return data.DecryptTo(ci.EncryptKey.Key, ci.EncryptKey.IV);
+                    return isEncrypt ? data.DecryptTo(ci.EncryptKey.Key, ci.EncryptKey.IV) : data;
                 }
-                return data.DecryptTo();
+                return isEncrypt ? data.DecryptTo() : data;
             }
         }
     }

@@ -7,6 +7,7 @@ namespace AiSoft.Socket.Models
     // BaseContext<BaseUnpacker> IContext
     internal class MessageContext : IContext
     {
+        // override
         public IUserToken UserToken { get; set; }
 
         public IUnpacker Unpacker { get; set; }

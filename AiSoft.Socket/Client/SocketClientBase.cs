@@ -10,6 +10,8 @@ using AiSoft.Socket.Models;
 using AiSoft.Tools.Extensions;
 using AiSoft.Tools.Security.Internal;
 using SAEA.Common;
+using SAEA.Common.Caching;
+using SAEA.Common.Threading;
 using SAEA.Sockets;
 using SAEA.Sockets.Base;
 using SAEA.Sockets.Handler;
@@ -44,6 +46,11 @@ namespace AiSoft.Socket.Client
         /// 加密密匙
         /// </summary>
         private AESKey _encryptKey;
+
+        /// <summary>
+        /// 是否加密
+        /// </summary>
+        private bool _isEncrypt;
 
         /// <summary>
         /// 断开事件
@@ -100,10 +107,12 @@ namespace AiSoft.Socket.Client
         /// <param name="bufferSize"></param>
         /// <param name="timeOut"></param>
         /// <param name="socketType"></param>
-        public SocketClientBase(string ip = "127.0.0.1", int port = 12346, int bufferSize = 4 * 1024, int timeOut = 30000, SAEASocketType socketType = SAEASocketType.Tcp)
+        /// <param name="isEncrypt"></param>
+        public SocketClientBase(string ip = "127.0.0.1", int port = 12346, int bufferSize = 4 * 1024, int timeOut = 30000, SAEASocketType socketType = SAEASocketType.Tcp, bool isEncrypt = true)
         {
             _receiveModules = new List<ReceiveModule>();
             _encryptKey = new AESKey();
+            _isEncrypt = isEncrypt;
 
             if (!ip.MatchInetAddress())
             {
@@ -182,7 +191,7 @@ namespace AiSoft.Socket.Client
                 }
                 try
                 {
-                    var msgModel = s.Content.DecryptTo(_encryptKey.Key, _encryptKey.IV).JsonPBDeserialize<MessageModel>();
+                    var msgModel = _isEncrypt ? s.Content.DecryptTo(_encryptKey.Key, _encryptKey.IV).JsonPBDeserialize<MessageModel>() : s.Content.JsonPBDeserialize<MessageModel>();
                     if (s.Type == (byte)SocketProtocalType.Pong)
                     {
                         _encryptKey = msgModel.GetContent<AESKey>();
@@ -248,7 +257,7 @@ namespace AiSoft.Socket.Client
         /// </summary>
         private void HeartAsync()
         {
-            Task.Factory.StartNew(async () =>
+            TaskHelper.LongRunning(async () =>
             {
                 while (IsHeart)
                 {
@@ -260,7 +269,8 @@ namespace AiSoft.Socket.Client
                             {
                                 _heartSendTime = DateTimeHelper.Now;
                                 var sm = new BaseSocketProtocal {BodyLength = 0, Type = (byte)SocketProtocalType.Heart};
-                                _client.SendAsync(sm.ToBytes());
+                                //_client.SendAsync(sm.ToBytes());
+                                Send(sm.ToBytes());
                             }
                             catch
                             {
@@ -273,7 +283,7 @@ namespace AiSoft.Socket.Client
                         await Task.Delay(1000);
                     }
                 }
-            }, TaskCreationOptions.LongRunning);
+            });
         }
 
         /// <summary>
@@ -353,7 +363,7 @@ namespace AiSoft.Socket.Client
         /// <returns></returns>
         private byte[] GetPbData(MessageModel msgModel)
         {
-            var data = msgModel.JsonPBSerialize().EncryptTo(_encryptKey.Key, _encryptKey.IV);
+            var data = _isEncrypt ? msgModel.JsonPBSerialize().EncryptTo(_encryptKey.Key, _encryptKey.IV) : msgModel.JsonPBSerialize();
             var sp = BaseSocketProtocal.Parse(data, SocketProtocalType.ChatMessage).ToBytes();
             return sp;
         }
